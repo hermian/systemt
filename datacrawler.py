@@ -12,15 +12,12 @@ from settings import START_DATE
 from cp_constant import *
 import win32com.client
 
-# Open High Low Close Volume Adj Close MA5
-
 def run():
     with sqlite3.connect("price.db") as con:
         cursor = con.cursor()
 
         def _make_long_date(date):
             return date.year * 10000 + date.month * 100 + date.day
-                
 
         def _get_recent_date(cursor, table_name):
             row = cursor.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='{}'".format(table_name)).fetchone()
@@ -46,7 +43,6 @@ def run():
             if datetime.now().hour < 16: end_date = datetime.now() - timedelta(days=1)
 
             if start_date > end_date: continue
-
 
             instStockChart = win32com.client.Dispatch("CpSysDib.StockChart")
 
@@ -75,7 +71,9 @@ def run():
                           'LOW':[],
                           'CLOSE':[],
                           'VOLUME':[]}
-            for i in range(numData):
+
+            # cybos plus 최근데이터 부터 온다
+            for i in reversed(range(numData)):
                 
                 long_date = instStockChart.GetDataValue(0, i)
                 year = int(long_date / 10000)
@@ -99,7 +97,11 @@ def run():
             price = DataFrame(price_data)
             price.to_sql(table_name, con, if_exists='append', chunksize=1000)
             get_logger().debug("{} 종목의 {}데이터를 저장 하였습니다.".format(code, len(price)))
-            row = cursor.execute("DELETE FROM '{}' WHERE DATE = (SELECT MIN(DATE) FROM '{}')".format(table_name, table_name))
+
+            #remove old data
+            row = cursor.execute("SELECT COUNT(*) FROM '{}'".format(table_name)).fetchone()
+            if row[0] > 2000:
+                row = cursor.execute("DELETE FROM '{}' WHERE DATE = (SELECT MIN(DATE) FROM '{}')".format(table_name, table_name))
             
 if __name__ == '__main__':
     run()
