@@ -1,8 +1,9 @@
 # systemt
 
-stockcode.py 
+###stockcode.py 
 증권 코드를 sqlite code.db에 구축 합니다.
 
+"
 sparrow-mac-mini2:SystemT sparrow$ sqlite3 code.db 
 SQLite version 3.8.4.1 2014-03-11 15:27:36
 Enter ".help" for usage hints.
@@ -27,11 +28,13 @@ CREATE TABLE "CODE" (
   "TYPE" TEXT
 )
 sqlite> 
+"
 
-datacrawler.py
+###datacrawler.py
 증권 종뫀 코드에 있는 주식 종목들의
 시가 고가 저가 종가 거래량을 일자 별로 각각의 코드명의 테이블로 price.db에 저장 합니다.
 
+"
 sparrow-mac-mini2:SystemT sparrow$ sqlite3 price.db 
 SQLite version 3.8.4.1 2014-03-11 15:27:36
 Enter ".help" for usage hints.
@@ -58,3 +61,5 @@ CREATE TABLE "A000020" (
   "OPEN" INTEGER,
   "VOLUME" INTEGER
 )
+
+"
