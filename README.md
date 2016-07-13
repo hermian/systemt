@@ -1,4 +1,5 @@
 # systemt
+파이썬을 이용한 시스템트레이딩 개발
 
 ###stockcode.py 
 증권 코드를 sqlite code.db에 구축 합니다.
