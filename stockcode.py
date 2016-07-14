@@ -35,7 +35,7 @@ def insert_from_cp(con):
 def get_code_list():
     result = dict()
     with sqlite3.connect("code.db") as con:
-        for code, name in con.cursor().execute("SELECT code, name FROM CODE"):
+        for code, name in con.cursor().execute("SELECT code, name FROM CODE where TYPE = '거래소' or TYPE = '코스닥' "):
             result[code] = name
 
     return result.items()
