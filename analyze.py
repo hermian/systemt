@@ -31,9 +31,7 @@ def makeDataFrame( code ):
         df = pd.read_sql("SELECT * FROM '{}'".format(table_name), con, index_col=None)
         return df
 
-def isMAGoldCross( code, MA1 = 20, MA2 = 60 ):
-    df = makeDataFrame( code )
-            
+def isMAGoldCross( df, MA1 = 20, MA2 = 60 ):
     df['short_ma'] = pd.rolling_mean(df['CLOSE'],MA1)
     df['long_ma'] = pd.rolling_mean(df['CLOSE'],MA2)
     df['signal'] = 0.0
@@ -49,8 +47,7 @@ def isMAGoldCross( code, MA1 = 20, MA2 = 60 ):
     else:
         return False
 
-def isBBandSignal( code, period = 20):
-    df = makeDataFrame( code )
+def isBBandSignal( df, period = 20):
     df['Bol_upper'] = pd.rolling_mean(df['CLOSE'], window=period) + 2* pd.rolling_std(df['CLOSE'], period, min_periods=period)
     df['Bol_lower'] = pd.rolling_mean(df['CLOSE'], window=period) - 2* pd.rolling_std(df['CLOSE'], period, min_periods=period)
     df['signal'] = 0.0
@@ -68,9 +65,7 @@ def isBBandSignal( code, period = 20):
     else:
         return False
 
-def isMACDSignal( code, n1 = 12, n2= 26, c= 9):
-    df = makeDataFrame( code )
-   
+def isMACDSignal( df, n1 = 12, n2= 26, c= 9):
     df['MACD'] = pd.ewma(df['CLOSE'], span=n1) - pd.ewma(df['CLOSE'], span=n2)
     df['MACD_Signal'] = pd.ewma(df['MACD'], span=c)
     df['signal'] = 0.0
@@ -84,16 +79,45 @@ def isMACDSignal( code, n1 = 12, n2= 26, c= 9):
         return False
 
 def run():
-    for code, name in get_code_list():
-        #res = isMAGoldCross( code, 20, 60 )
-        #if res == True:
-        #    print("MA20 MA60 GC {} {}".format(code,name))
-        #res = isBBandSignal( code, 20 )
-        #if res == True:
-        #    print("BBand {} {}".format(code, name))
-        res = isMACDSignal( code, 12, 26, 9)
-        if res == True:
-            print("MACD {} {}".format(code, name))  
+    with sqlite3.connect("analyze.db") as con:
+        cursor = con.cursor()
+
+        code_magc = {'CODE':[],
+                     'NAME':[]}
+        code_bb   = {'CODE':[],
+                     'NAME':[]}
+        code_macd = {'CODE':[],
+                     'NAME':[]}
+
+        for code, name in get_code_list():
+            df = makeDataFrame( code )
+            res = isMAGoldCross( df, 20, 60 )
+            if res == True:
+                code_magc['CODE'].append(code)
+                code_magc['NAME'].append(name)
+                get_logger().debug("MA20, MA60 Golden Cross {}{}".format(code,name))
+
+            res = isBBandSignal( df, 20 )
+            if res == True:
+                code_bb['CODE'].append(code)
+                code_bb['NAME'].append(name)
+                get_logger().debug("BBnad lower after up {}{}".format(code,name))
+
+            res = isMACDSignal( df, 12, 26, 9)
+            if res == True:
+                code_macd['CODE'].append(code)
+                code_macd['NAME'].append(name)
+                get_logger().debug("MACD sig {}{}".format(code,name))
+
+        magc = DataFrame(code_magc)
+        bb   = DataFrame(code_bb)
+        macd = DataFrame(code_magc)
+        magc.to_sql("MAGC", con, if_exists='replace', chunksize=1000)
+        get_logger().debug("MAGC {} saved.".format(len(magc)))
+        bb.to_sql("BB", con, if_exists='replace', chunksize=1000)
+        get_logger().debug("BB {} saved.".format(len(bb)))
+        macd.to_sql("MACD", con, if_exists='replace', chunksize=1000)
+        get_logger().debug("MACD {} saved.".format(len(macd)))
 
 if __name__ == '__main__':
     run()

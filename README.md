@@ -5,10 +5,10 @@
 증권 코드를 sqlite code.db에 구축 합니다.
 
    
-> sqlite3 code.db 
-> SQLite version 3.8.4.1 2014-03-11 15:27:36
-> Enter ".help" for usage hints.
-> sqlite> select * from code limit 10
+	sqlite3 code.db 
+	SQLite version 3.8.4.1 2014-03-11 15:27:36
+	Enter ".help" for usage hints.
+	sqlite> select * from code limit 10
    
     0|A000020|동화약품|거래소
     1|A000030|우리은행|거래소
@@ -28,12 +28,11 @@
     "NAME" TEXT,
     "TYPE" TEXT
     )
-sqlite> 
 
 
 ###datacrawler.py
->증권 종뫀 코드에 있는 주식 종목들의
->시가 고가 저가 종가 거래량을 일자 별로 각각의 코드명의 테이블로 price.db에 저장 합니다.
+증권 종뫀 코드에 있는 주식 종목들의
+시가 고가 저가 종가 거래량을 일자 별로 각각의 코드명의 테이블로 price.db에 저장 합니다.
 
     
     sqlite3 price.db 
@@ -63,4 +62,18 @@ sqlite>
     "VOLUME" INTEGER
     )
 
+###analyze.py
+price.db 에 증권 시세 데이터를 분석 하여 다음의 항목으로 코드를 저장 합니다.
 
+#### 이평선 골든크로스
+이동 평균선 20일선과 60일선의 골든 크로스 결과를 
+analyze.db
+MAGC 테이블의 CODE와 NAME 으로 저장 합니다.
+
+#### 볼린져 밴드 하한선 터치 이후 상승
+볼린져 밴드의 하한선에 주가가 도달 이후 상승 한 종목을 
+BB 테이블의 CODE와 NAME 으로 저장 합니다.
+
+#### MACD signal
+MACD 매수 시그널이 포착된 종목을 
+MACD 테이블의 CODE와 NAME으로 저장 합니다.
