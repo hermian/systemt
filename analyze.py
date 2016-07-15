@@ -8,28 +8,8 @@ import numpy as np
 
 from logger import get_logger
 from stockcode import get_code_list
-from settings import START_DATE
-from cp_constant import *
-import win32com.client
 
-def checkData( cursor, table_name ):
-    row = cursor.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='{}'".format(table_name)).fetchone()
-    if row is None: return False
-        
-    row = cursor.execute("SELECT COUNT(*) FROM '{}'".format(table_name)).fetchone()
-    if row is None : return False
-
-    return True
-
-def makeDataFrame( code ):
-    with sqlite3.connect("price.db") as con:
-        cursor = con.cursor()
-        table_name = code
-        
-        if checkData( cursor, table_name ) == False: return False
-        
-        df = pd.read_sql("SELECT * FROM '{}'".format(table_name), con, index_col=None)
-        return df
+from stockdata import makeDataFrame
 
 def isMAGoldCross( df, MA1 = 20, MA2 = 60 ):
     df['short_ma'] = pd.rolling_mean(df['CLOSE'],MA1)
@@ -91,6 +71,8 @@ def run():
 
         for code, name in get_code_list():
             df = makeDataFrame( code )
+            if len(df) == 0: continue
+
             res = isMAGoldCross( df, 20, 60 )
             if res == True:
                 code_magc['CODE'].append(code)
