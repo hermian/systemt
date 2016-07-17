@@ -9,6 +9,7 @@ from pandas import Series, DataFrame
 from logger import get_logger
 from stockcode import get_code_list
 from settings import START_DATE
+from stockdbutil import get_last_update_date
 from cp_constant import *
 import win32com.client
 
@@ -19,18 +20,11 @@ def run():
         def _make_long_date(date):
             return date.year * 10000 + date.month * 100 + date.day
 
-        def _get_recent_date(cursor, table_name):
-            row = cursor.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='{}'".format(table_name)).fetchone()
-            if row is None: return None
-
-            row = cursor.execute("SELECT MAX(Date) FROM '{}'".format(table_name)).fetchone()
-            return datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
-
         for code, name in get_code_list():
 
             table_name = code
             
-            recent_date = _get_recent_date(cursor, table_name)
+            recent_date = get_last_update_date(table_name)
             if recent_date is None: recent_date = START_DATE
 
             if recent_date.date() == datetime.now().date(): continue

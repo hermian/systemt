@@ -9,7 +9,7 @@ import numpy as np
 from logger import get_logger
 from stockcode import get_code_list
 
-from stockdata import makeDataFrame
+from stockdbutil import makeDataFrame
 
 def isMAGoldCross( df, MA1 = 20, MA2 = 60 ):
     df['short_ma'] = pd.rolling_mean(df['CLOSE'],MA1)
