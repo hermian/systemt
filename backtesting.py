@@ -8,6 +8,7 @@ import numpy as np
 
 from logger import get_logger
 from stockcode import get_code_list
+from analyze import get_code_list_from_analyze
 
 from stockdbutil import makeDataFrame
 from stockdbutil import get_first_update_date, get_last_update_date
@@ -43,26 +44,28 @@ def makeBacktestingDataFrame( code ):
     return data
 
 def initialize(context):
-    add_history(5, '1d', 'price')
     add_history(20, '1d', 'price')
+    add_history(60, '1d', 'price')
     context.i = 0
     
 
 def handle_data(context, data):
     context.i += 1
-    if context.i < 20:
+    if context.i < 60:
         return
 
-    ma5 = history(5, '1d', 'price').mean()
     ma20 = history(20, '1d', 'price').mean()
+    ma60 = history(60, '1d', 'price').mean()
 
     sym = symbol(code)
     if ma5[sym] > ma20[sym]:
         order(sym, 1)
-    else:
-        order(sym, -1)
     
-    record(AAPL=data[sym].price, ma5=ma5[sym], ma20=ma20[sym])
+    """
+        1%, 2%, 3%, 4%, 5% sell
+    """
+    
+    record(AAPL=data[sym].price, ma20=ma5[sym], ma60=ma20[sym])
 
 def run():
     global code

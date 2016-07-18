@@ -58,13 +58,21 @@ def isMACDSignal( df, n1 = 12, n2= 26, c= 9):
     else:
         return False
 
+def get_code_list_from_analyze( type ):
+    result = dict()
+    with sqlite3.connect("analyze.db") as con:
+        for code, name in con.cursor().execute("SELECT code, name FROM '{}'".format(type)):
+            result[code] = name
+
+    return result.items()
+
 def run():
     with sqlite3.connect("analyze.db") as con:
         cursor = con.cursor()
 
         code_magc = {'CODE':[],
                      'NAME':[]}
-        code_bb   = {'CODE':[],
+        code_bband   = {'CODE':[],
                      'NAME':[]}
         code_macd = {'CODE':[],
                      'NAME':[]}
@@ -81,8 +89,8 @@ def run():
 
             res = isBBandSignal( df, 20 )
             if res == True:
-                code_bb['CODE'].append(code)
-                code_bb['NAME'].append(name)
+                code_bband['CODE'].append(code)
+                code_bband['NAME'].append(name)
                 get_logger().debug("BBnad lower after up {}{}".format(code,name))
 
             res = isMACDSignal( df, 12, 26, 9)
@@ -92,12 +100,12 @@ def run():
                 get_logger().debug("MACD sig {}{}".format(code,name))
 
         magc = DataFrame(code_magc)
-        bb   = DataFrame(code_bb)
+        bband   = DataFrame(code_bband)
         macd = DataFrame(code_magc)
         magc.to_sql("MAGC", con, if_exists='replace', chunksize=1000)
         get_logger().debug("MAGC {} saved.".format(len(magc)))
-        bb.to_sql("BB", con, if_exists='replace', chunksize=1000)
-        get_logger().debug("BB {} saved.".format(len(bb)))
+        bband.to_sql("BBAND", con, if_exists='replace', chunksize=1000)
+        get_logger().debug("BBAND {} saved.".format(len(bband)))
         macd.to_sql("MACD", con, if_exists='replace', chunksize=1000)
         get_logger().debug("MACD {} saved.".format(len(macd)))
 
