@@ -101,7 +101,7 @@ def run():
 
         magc = DataFrame(code_magc)
         bband   = DataFrame(code_bband)
-        macd = DataFrame(code_magc)
+        macd = DataFrame(code_macd)
         magc.to_sql("MAGC", con, if_exists='replace', chunksize=1000)
         get_logger().debug("MAGC {} saved.".format(len(magc)))
         bband.to_sql("BBAND", con, if_exists='replace', chunksize=1000)
