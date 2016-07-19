@@ -47,6 +47,8 @@ def initialize(context):
     add_history(20, '1d', 'price')
     add_history(60, '1d', 'price')
     context.i = 0
+    context.investment = False
+    context.buy_price = 0
     
 
 def handle_data(context, data):
@@ -57,15 +59,30 @@ def handle_data(context, data):
     ma20 = history(20, '1d', 'price').mean()
     ma60 = history(60, '1d', 'price').mean()
 
+    buy = False
+    sell = False
+
     sym = symbol(code)
-    if ma5[sym] > ma20[sym]:
-        order(sym, 1)
+    
+    if context.investment == False:
+        if ma20[sym] > ma60[sym] :
+            order_target(sym, 100)
+            context.investment = True
+            context.buy_price = data[sym].price
+            buy = True
+    else:
+        if (data[sym].price > context.buy_price + (context.buy_price * 0.01)):
+            order_target(sym, -100)
+            context.investment = False
+            sell = True
+            
+    record(code=data[sym].price, ma20=ma20[sym], ma60=ma60[sym], buy=buy, sell=sell)
     
     """
         1%, 2%, 3%, 4%, 5% sell
     """
     
-    record(AAPL=data[sym].price, ma20=ma5[sym], ma60=ma20[sym])
+    
 
 def run():
     global code
