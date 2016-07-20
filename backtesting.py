@@ -15,6 +15,8 @@ from stockdbutil import get_first_update_date, get_last_update_date
 
 from zipline.algorithm import TradingAlgorithm
 from zipline.api import history, order_target, symbol, order, record, add_history
+from zipline.api import set_commission, commission
+from settings import COMMISSION
 
 def makeBacktestingDataFrame( code ):
     """
@@ -44,6 +46,7 @@ def makeBacktestingDataFrame( code ):
     return data
 
 def initialize(context):
+    set_commission(commission.PerDollar(cost = COMMISSION))
     add_history(20, '1d', 'price')
     add_history(60, '1d', 'price')
     context.i = 0
@@ -63,16 +66,18 @@ def handle_data(context, data):
     sell = False
 
     sym = symbol(code)
+
+    count = int(100000 /  data[sym].price)
     
     if context.investment == False:
         if ma20[sym] > ma60[sym] :
-            order_target(sym, 100)
+            order_target(sym, count)
             context.investment = True
             context.buy_price = data[sym].price
             buy = True
     else:
         if (data[sym].price > context.buy_price + (context.buy_price * 0.01)):
-            order_target(sym, -100)
+            order_target(sym, -count)
             context.investment = False
             sell = True
             
@@ -88,7 +93,7 @@ def run():
     global code
     code = 'A059090'
     data = makeBacktestingDataFrame(code)
-    algo = TradingAlgorithm(initialize=initialize, handle_data=handle_data, identifiers=[code]  )
+    algo = TradingAlgorithm(capital_base=10000000, initialize=initialize, handle_data=handle_data, identifiers=[code]  )
     results = algo.run(data)
     
     print(results[['starting_cash', 'ending_cash', 'ending_value', 'portfolio_value']])
