@@ -16,7 +16,9 @@ from stockdbutil import get_first_update_date, get_last_update_date
 from zipline.algorithm import TradingAlgorithm
 from zipline.api import history, order_target, symbol, order, record, add_history
 from zipline.api import set_commission, commission
-from settings import COMMISSION
+from settings import COMMISSION, SELL_PRICE_RATIO, STRATEGY
+
+import talib as ta
 
 def makeBacktestingDataFrame( code ):
     """
@@ -40,21 +42,25 @@ def makeBacktestingDataFrame( code ):
     df = makeDataFrame(code)
     
     df = df[['CLOSE']]
-    data = data[len(data) - len(df):]
+    if len(data) > len(df):
+        data = data[len(data) - len(df):]
+    else:
+        df = df[len(df) - len(data):]
+
     data[code] = np.where(1, df['CLOSE'], df['CLOSE'])    
     
     return data
 
-def initialize(context):
+#MAGC
+def initialize_magc(context):
     set_commission(commission.PerDollar(cost = COMMISSION))
     add_history(20, '1d', 'price')
     add_history(60, '1d', 'price')
     context.i = 0
     context.investment = False
     context.buy_price = 0
-    
 
-def handle_data(context, data):
+def handle_data_magc(context, data):
     context.i += 1
     if context.i < 60:
         return
@@ -76,27 +82,113 @@ def handle_data(context, data):
             context.buy_price = data[sym].price
             buy = True
     else:
-        if (data[sym].price > context.buy_price + (context.buy_price * 0.01)):
+        if (data[sym].price > context.buy_price + (context.buy_price * sell_point)):
             order_target(sym, -count)
             context.investment = False
             sell = True
             
     record(code=data[sym].price, ma20=ma20[sym], ma60=ma60[sym], buy=buy, sell=sell)
     
-    """
-        1%, 2%, 3%, 4%, 5% sell
-    """
+#MACD
+# Define the MACD function  
+def MACD(prices, fastperiod=12, slowperiod=26, signalperiod=9):  
+    '''  
+    Function to return the difference between the most recent  
+    MACD value and MACD signal. Positive values are long  
+    position entry signals 
+
+    optional args:  
+        fastperiod = 12  
+        slowperiod = 26  
+        signalperiod = 9
+
+    Returns: macd - signal  
+    '''  
+    macd, signal, hist = ta.MACD(prices.values,  
+                                 fastperiod=fastperiod,  
+                                 slowperiod=slowperiod,  
+                                 signalperiod=signalperiod)  
+    return macd[-1] - signal[-1]
+
+def initialize_macd(context):
+    set_commission(commission.PerDollar(cost = COMMISSION))
+    context.i = 0
+    context.investment = False
+    context.buy_price = 0
+    context.gc = False
+    context.dc = False
+    context.position = 0.0
+    add_history(40, '1d', 'price')
+
+def handle_data_macd(context, data):
+    context.i += 1
+    if context.i < 60:
+        return
+
+    buy = False
+    sell = False
+
+    sym = symbol(code)
+
+    count = int(100000 /  data[sym].price)
+
+    prices = history(40, '1d', 'price')
+    macd = prices.apply(MACD, fastperiod=12, slowperiod=26, signalperiod=9)
+ 
+    if context.investment == False:
+        if macd[sym] > 0 and context.position == -1:
+            order_target(sym, count)
+            context.investment = True
+            context.buy_price = data[sym].price
+            buy = True
+            context.position = 1
+    else:
+        if (data[sym].price > context.buy_price + (context.buy_price * sell_point)):
+            order_target(sym, -count)
+            context.investment = False
+            sell = True
+
+    if macd[sym] < 0 :
+        context.position = -1
     
+    if macd[sym] > 0 :
+        context.position = 1
+            
+    record(code=data[sym].price, macd=macd[sym], buy=buy, sell=sell)
     
 
 def run():
     global code
-    code = 'A059090'
-    data = makeBacktestingDataFrame(code)
-    algo = TradingAlgorithm(capital_base=10000000, initialize=initialize, handle_data=handle_data, identifiers=[code]  )
-    results = algo.run(data)
-    
-    print(results[['starting_cash', 'ending_cash', 'ending_value', 'portfolio_value']])
+    global sell_point
 
+    with sqlite3.connect("backtesting.db") as con:
+        cursor = con.cursor()
+        
+        backtesting_save_data = { 'SELL_PRICE_RATIO':[],
+                                  'PORTFOLIO_VALUE':[] }
+
+        for strategys in STRATEGY:
+            for code, name in get_code_list_from_analyze(strategys):
+                for point in SELL_PRICE_RATIO:
+                    sell_point = point
+                    data = makeBacktestingDataFrame(code)
+                    if strategys == 'MAGC':
+                        algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_magc, handle_data=handle_data_magc, identifiers=[code]  )
+                        results = algo.run(data)
+                    elif strategys == 'MACD':
+                        algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_macd, handle_data=handle_data_macd, identifiers=[code]  )
+                        results = algo.run(data)
+                    else:
+                        algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_magc, handle_data=handle_data_magc, identifiers=[code]  )
+                        results = algo.run(data)
+
+                    
+                    backtesting_save_data['SELL_PRICE_RATIO'].append('{}'.format(point))
+                    backtesting_save_data['PORTFOLIO_VALUE'].append(results['portfolio_value'][-1])
+                    backtesting_save_df = DataFrame(backtesting_save_data)
+               
+                backtesting_save_df.to_sql(code, con, if_exists='replace', chunksize=1000)
+                    #print(results[['starting_cash', 'ending_cash', 'ending_value', 'portfolio_value']])
+                get_logger().debug("code : {}. backtesting complete".format(code))
 if __name__ == '__main__':
     run()

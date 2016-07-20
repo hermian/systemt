@@ -49,7 +49,7 @@ def isMACDSignal( df, n1 = 12, n2= 26, c= 9):
     df['MACD'] = pd.ewma(df['CLOSE'], span=n1) - pd.ewma(df['CLOSE'], span=n2)
     df['MACD_Signal'] = pd.ewma(df['MACD'], span=c)
     df['signal'] = 0.0
-    df['signal'] = np.where(df['MACD'] < df['MACD_Signal'], 1.0, 0.0)
+    df['signal'] = np.where(df['MACD'] > df['MACD_Signal'], 1.0, 0.0)
     df['positions'] = 0.0
     df['positions'] = df['signal'].diff()
 
