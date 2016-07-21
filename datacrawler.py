@@ -94,7 +94,7 @@ def run():
 
             #remove old data
             row = cursor.execute("SELECT COUNT(*) FROM '{}'".format(table_name)).fetchone()
-            if row[0] > 2000:
+            if row[0] > 600:
                 row = cursor.execute("DELETE FROM '{}' WHERE DATE = (SELECT MIN(DATE) FROM '{}')".format(table_name, table_name))
             
 if __name__ == '__main__':

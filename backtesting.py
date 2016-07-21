@@ -164,11 +164,15 @@ def run():
     with sqlite3.connect("backtesting.db") as con:
         cursor = con.cursor()
         
-        backtesting_save_data = { 'SELL_PRICE_RATIO':[],
+        backtesting_save_data = { 'CODE':[],
+                                  'NAME':[],
+                                  'STRATEGY':[],
+                                  'SELL_PRICE_RATIO':[],
                                   'PORTFOLIO_VALUE':[] }
 
         for strategys in STRATEGY:
             for code, name in get_code_list_from_analyze(strategys):
+                get_logger().debug("code : {}. name:{} strategy:{} start".format(code,name,strategys))
                 for point in SELL_PRICE_RATIO:
                     sell_point = point
                     data = makeBacktestingDataFrame(code)
@@ -178,17 +182,17 @@ def run():
                     elif strategys == 'MACD':
                         algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_macd, handle_data=handle_data_macd, identifiers=[code]  )
                         results = algo.run(data)
-                    else:
-                        algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_magc, handle_data=handle_data_magc, identifiers=[code]  )
-                        results = algo.run(data)
+                   
 
-                    
+                    backtesting_save_data['CODE'].append(code)
+                    backtesting_save_data['NAME'].append(name)
+                    backtesting_save_data['STRATEGY'].append(strategys)
                     backtesting_save_data['SELL_PRICE_RATIO'].append('{}'.format(point))
                     backtesting_save_data['PORTFOLIO_VALUE'].append(results['portfolio_value'][-1])
                     backtesting_save_df = DataFrame(backtesting_save_data)
                
-                backtesting_save_df.to_sql(code, con, if_exists='replace', chunksize=1000)
+                backtesting_save_df.to_sql('BACK', con, if_exists='replace', chunksize=1000)
                     #print(results[['starting_cash', 'ending_cash', 'ending_value', 'portfolio_value']])
-                get_logger().debug("code : {}. backtesting complete".format(code))
+                get_logger().debug("code : {}. name:{} strategy:{} end".format(code,name,strategys))
 if __name__ == '__main__':
     run()
