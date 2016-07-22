@@ -115,8 +115,6 @@ def initialize_macd(context):
     context.i = 0
     context.investment = False
     context.buy_price = 0
-    context.gc = False
-    context.dc = False
     context.position = 0.0
     add_history(40, '1d', 'price')
 
@@ -157,6 +155,49 @@ def handle_data_macd(context, data):
     record(code=data[sym].price, macd=macd[sym], buy=buy, sell=sell)
     
 
+def initialize_bband(context):
+    set_commission(commission.PerDollar(cost = COMMISSION))
+    context.i = 0
+    context.investment = False
+    context.buy_price = 0
+    context.position = 0.0
+    add_history(20, '1d', 'price')
+
+def handle_data_bband(context, data):
+    context.i += 1
+    if context.i < 20:
+        return
+
+    buy = False
+    sell = False
+
+    sym = symbol(code)
+
+    count = int(100000 /  data[sym].price)
+
+    prices = history(20, '1d', 'price')
+    upper, middle, lower = ta.BBANDS(
+        prices[sym].values,
+        timeperiod=20,
+        nbdevup=2,
+        nbdevdn=2,
+        matype=0)
+ 
+    if context.investment == False:
+        if lower[-1] > data[sym].price:
+            order_target(sym, count)
+            context.investment = True
+            context.buy_price = data[sym].price
+            buy = True
+            context.position = 1
+    else:
+        if (data[sym].price > context.buy_price + (context.buy_price * sell_point)):
+            order_target(sym, -count)
+            context.investment = False
+            sell = True
+            
+    record(code=data[sym].price, upper=upper[-1], lower=lower[-1], makeBacktestingDataFrame=middle[-1], buy=buy, sell=sell)
+
 def run():
     global code
     global sell_point
@@ -182,7 +223,9 @@ def run():
                     elif strategys == 'MACD':
                         algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_macd, handle_data=handle_data_macd, identifiers=[code]  )
                         results = algo.run(data)
-                   
+                    elif strategys == 'BBAND':
+                        algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_bband, handle_data=handle_data_bband, identifiers=[code]  )
+                        results = algo.run(data)
 
                     backtesting_save_data['CODE'].append(code)
                     backtesting_save_data['NAME'].append(name)
