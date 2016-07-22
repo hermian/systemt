@@ -14,9 +14,11 @@ def insert_from_cp(con):
     instStockMst = win32com.client.Dispatch("dscbo1.StockMst")
     code_data = {'CODE':[],
                  'NAME':[],
-                 'TYPE':[]}
-
-    for i in range(0, instCpStockCode.GetCount()):
+                 'TYPE':[],
+                 'PER':[],
+                 'BPS':[]} #PRICE / BPS
+    total = instCpStockCode.GetCount()
+    for i in range(0, total):
         code = instCpStockCode.GetData(CPSTOCKCODE_CODE, i)
         name = instCpStockCode.GetData(CPSTOCKCODE_NAME, i)
         code_data['CODE'].append(code)
@@ -25,8 +27,14 @@ def insert_from_cp(con):
         instStockMst.SetInputValue(0, code)
         instStockMst.BlockRequest()
         type = instStockMst.GetHeaderValue(CPSTOCKMST_CATEGORY)
+        per = instStockMst.GetHeaderValue(CPSTOCKMST_PER)
+        bps = instStockMst.GetHeaderValue(CPSTOCKMST_BPS)
 
         code_data['TYPE'].append(type)
+        code_data['PER'].append(per)
+        code_data['BPS'].append(bps)
+        get_logger().debug("{}/{} {} {} {} {} {}".format(i, total,code, name, type, per, bps))
+        
 
     data = DataFrame(code_data)
     data.to_sql("CODE", con, if_exists='replace', chunksize=1000)
