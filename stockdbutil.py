@@ -55,3 +55,23 @@ def get_first_update_date( table_name ):
 
         row = cursor.execute("SELECT MIN(Date) FROM '{}'".format(table_name)).fetchone()
         return datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
+
+def get_per_bps_with_code(code):
+    with sqlite3.connect("code.db") as con:
+        for per, bps in con.cursor().execute("SELECT PER, BPS FROM CODE WHERE CODE = '{}'".format(code)):
+            per = per
+            bps = bps
+
+    return per, bps
+
+def get_last_data_with_code(code):
+    with sqlite3.connect("price.db") as con:
+        for open, high, low, close, volume in con.cursor().execute("SELECT OPEN, HIGH, LOW, CLOSE, VOLUME FROM '{}' WHERE DATE = (SELECT MAX(DATE) FROM '{}')".format(code, code)):
+            open = open
+            high = high
+            low = low
+            close = close
+            volume = volume
+
+    return open, high, low, close, volume
+

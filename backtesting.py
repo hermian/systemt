@@ -10,7 +10,7 @@ from logger import get_logger
 from stockcode import get_code_list
 from analyze import get_code_list_from_analyze
 
-from stockdbutil import makeDataFrame
+from stockdbutil import makeDataFrame, get_per_bps_with_code, get_last_data_with_code
 from stockdbutil import get_first_update_date, get_last_update_date
 
 from zipline.algorithm import TradingAlgorithm
@@ -209,10 +209,26 @@ def run():
                                   'NAME':[],
                                   'STRATEGY':[],
                                   'SELL_PRICE_RATIO':[],
-                                  'PORTFOLIO_VALUE':[] }
+                                  'PORTFOLIO_VALUE':[],
+                                  'OPEN':[],
+                                  'HIGH':[],
+                                  'LOW':[],
+                                  'CLOSE':[],
+                                  'VOLUME':[],
+                                  'PER':[],
+                                  'BPS':[],
+                                  'PBR':[]}
 
         for strategys in STRATEGY:
             for code, name in get_code_list_from_analyze(strategys):
+                per , bps = get_per_bps_with_code(code)
+
+                open, high, low, close, volume = get_last_data_with_code(code)
+                if bps != 0:
+                    pbr = close / bps
+                else:
+                    pbr = 0.0
+
                 get_logger().debug("code : {}. name:{} strategy:{} start".format(code,name,strategys))
                 for point in SELL_PRICE_RATIO:
                     sell_point = point
@@ -232,6 +248,15 @@ def run():
                     backtesting_save_data['STRATEGY'].append(strategys)
                     backtesting_save_data['SELL_PRICE_RATIO'].append('{}'.format(point))
                     backtesting_save_data['PORTFOLIO_VALUE'].append(results['portfolio_value'][-1])
+                    backtesting_save_data['OPEN'].append(open)
+                    backtesting_save_data['HIGH'].append(high)
+                    backtesting_save_data['LOW'].append(low)
+                    backtesting_save_data['CLOSE'].append(close)
+                    backtesting_save_data['VOLUME'].append(volume)
+                    backtesting_save_data['PER'].append(per)
+                    backtesting_save_data['BPS'].append(bps)
+                    backtesting_save_data['PBR'].append(pbr)
+
                     backtesting_save_df = DataFrame(backtesting_save_data)
                
                 backtesting_save_df.to_sql('BACK', con, if_exists='replace', chunksize=1000)
