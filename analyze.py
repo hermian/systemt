@@ -9,7 +9,7 @@ import numpy as np
 from logger import get_logger
 from stockcode import get_code_list
 
-from stockdbutil import makeDataFrame
+from stockdbutil import makeDataFrame, get_per_bps_with_code, get_last_data_with_code
 
 def isMAGoldCross( df, MA1 = 20, MA2 = 60 ):
     df['short_ma'] = pd.rolling_mean(df['CLOSE'],MA1)
@@ -77,6 +77,17 @@ def run():
         code_macd = {'CODE':[],
                      'NAME':[]}
 
+        per_bps_pbr = {'CODE':[],
+                       'NAME':[],
+                       'OPEN':[],
+                       'HIGH':[],
+                       'LOW':[],
+                       'CLOSE':[],
+                       'VOLUME':[],
+                       'PER':[],
+                       'BPS':[],
+                       'PBR':[]}
+
         for code, name in get_code_list():
             df = makeDataFrame( code )
             if len(df) == 0: continue
@@ -99,6 +110,26 @@ def run():
                 code_macd['NAME'].append(name)
                 get_logger().debug("MACD sig {}{}".format(code,name))
 
+            # per,bps, pbr table
+            per , bps = get_per_bps_with_code(code)
+            open, high, low, close, volume = get_last_data_with_code(code)
+            if bps != 0:
+                pbr = close / bps
+            else:
+                pbr = 0.0
+
+            per_bps_pbr['CODE'].append(code)
+            per_bps_pbr['NAME'].append(name)
+            per_bps_pbr['OPEN'].append(open)
+            per_bps_pbr['HIGH'].append(high)
+            per_bps_pbr['LOW'].append(low)
+            per_bps_pbr['CLOSE'].append(close)
+            per_bps_pbr['VOLUME'].append(volume)
+            per_bps_pbr['PER'].append(per)
+            per_bps_pbr['BPS'].append(bps)
+            per_bps_pbr['PBR'].append(pbr)
+            get_logger().debug("{} {} {} {} {} {} {} {} {} {}".format(code,name,open,high,low, close,volume,per,bps,pbr))
+
         magc = DataFrame(code_magc)
         bband   = DataFrame(code_bband)
         macd = DataFrame(code_macd)
@@ -109,5 +140,21 @@ def run():
         macd.to_sql("MACD", con, if_exists='replace', chunksize=1000)
         get_logger().debug("MACD {} saved.".format(len(macd)))
 
+        per_bps_pbr_df = DataFrame(per_bps_pbr)
+        per_bps_pbr_df.to_sql("BPS", con, if_exists='replace', chunksize=1000)
+        get_logger().debug("BPS {} saved.".format(len(per_bps_pbr_df)))
+
 if __name__ == '__main__':
     run()
+
+"""
+select code, name from 
+	( select * from 
+		(select code, name, close, volume, per, bps, pbr from 
+			bps order by volume desc) 
+		order by per)
+	where pbr < 1 and bps > 0
+	order by pbr ;
+
+
+"""
