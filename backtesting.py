@@ -262,5 +262,17 @@ def run():
                 backtesting_save_df.to_sql('BACK', con, if_exists='replace', chunksize=1000)
                     #print(results[['starting_cash', 'ending_cash', 'ending_value', 'portfolio_value']])
                 get_logger().debug("code : {}. name:{} strategy:{} end".format(code,name,strategys))
+
 if __name__ == '__main__':
     run()
+
+
+"""
+select code, name, close, volume , portfolio_value , pbr, STRATEGY, SELL_PRICE_RATIO from
+	( select * from
+			( select * from 
+				back order by volume desc)
+			order by pbr)
+	where pbr < 1 and bps > 0 
+	order by portfolio_value desc limit 10;
+"""
