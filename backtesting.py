@@ -230,8 +230,11 @@ def run():
                     pbr = 0.0
 
                 get_logger().debug("code : {}. name:{} strategy:{} start".format(code,name,strategys))
+                
+                last_portfolio = 0
                 for point in SELL_PRICE_RATIO:
                     sell_point = point
+                    
                     data = makeBacktestingDataFrame(code)
                     if strategys == 'MAGC':
                         algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_magc, handle_data=handle_data_magc, identifiers=[code]  )
@@ -242,25 +245,42 @@ def run():
                     elif strategys == 'BBAND':
                         algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_bband, handle_data=handle_data_bband, identifiers=[code]  )
                         results = algo.run(data)
+                    
+                    portfolio = results['portfolio_value'][-1]
+                    if last_portfolio < portfolio:
+                        if last_portfolio != 0:
+                            backtesting_save_data['CODE'].clear()
+                            backtesting_save_data['NAME'].clear()
+                            backtesting_save_data['STRATEGY'].clear()
+                            backtesting_save_data['SELL_PRICE_RATIO'].clear()
+                            backtesting_save_data['PORTFOLIO_VALUE'].clear()
+                            backtesting_save_data['OPEN'].clear()
+                            backtesting_save_data['HIGH'].clear()
+                            backtesting_save_data['LOW'].clear()
+                            backtesting_save_data['CLOSE'].clear()
+                            backtesting_save_data['VOLUME'].clear()
+                            backtesting_save_data['PER'].clear()
+                            backtesting_save_data['BPS'].clear()
+                            backtesting_save_data['PBR'].clear()
 
-                    backtesting_save_data['CODE'].append(code)
-                    backtesting_save_data['NAME'].append(name)
-                    backtesting_save_data['STRATEGY'].append(strategys)
-                    backtesting_save_data['SELL_PRICE_RATIO'].append('{}'.format(point))
-                    backtesting_save_data['PORTFOLIO_VALUE'].append(results['portfolio_value'][-1])
-                    backtesting_save_data['OPEN'].append(open)
-                    backtesting_save_data['HIGH'].append(high)
-                    backtesting_save_data['LOW'].append(low)
-                    backtesting_save_data['CLOSE'].append(close)
-                    backtesting_save_data['VOLUME'].append(volume)
-                    backtesting_save_data['PER'].append(per)
-                    backtesting_save_data['BPS'].append(bps)
-                    backtesting_save_data['PBR'].append(pbr)
+                        backtesting_save_data['CODE'].append(code)
+                        backtesting_save_data['NAME'].append(name)
+                        backtesting_save_data['STRATEGY'].append(strategys)
+                        backtesting_save_data['SELL_PRICE_RATIO'].append('{}'.format(point))
+                        backtesting_save_data['PORTFOLIO_VALUE'].append(portfolio)
+                        backtesting_save_data['OPEN'].append(open)
+                        backtesting_save_data['HIGH'].append(high)
+                        backtesting_save_data['LOW'].append(low)
+                        backtesting_save_data['CLOSE'].append(close)
+                        backtesting_save_data['VOLUME'].append(volume)
+                        backtesting_save_data['PER'].append(per)
+                        backtesting_save_data['BPS'].append(bps)
+                        backtesting_save_data['PBR'].append(pbr)
+                        last_portfolio = portfolio
 
                     backtesting_save_df = DataFrame(backtesting_save_data)
                
                 backtesting_save_df.to_sql('BACK', con, if_exists='replace', chunksize=1000)
-                    #print(results[['starting_cash', 'ending_cash', 'ending_value', 'portfolio_value']])
                 get_logger().debug("code : {}. name:{} strategy:{} end".format(code,name,strategys))
 
 if __name__ == '__main__':

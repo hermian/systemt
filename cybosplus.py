@@ -10,6 +10,8 @@ import time
 import os
 import sqlite3
 
+instCpTdUtil = win32com.client.Dispatch("CpTrade.CpTdUtil")
+
 def isConnect():
     instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
     if instCpCybos.Isconnect == 1:
@@ -53,14 +55,45 @@ def cp_restart():
     btn_ctrl = dlg.Button0
     btn_ctrl.Click()
 
+
+import threading
+class autoPw(threading.Thread):
+    def run(self):
+        app = application.Application()
+        title = "CybosPlus 주문확인 설정"
+        dlg = timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title=title))
+    
+        pw1, pw2, pw3 = get_password()
+    
+        pass_ctrl = dlg.Edit1
+        pass_ctrl.SetFocus()
+        pass_ctrl.TypeKeys(pw3)
+    
+        btn_ctrl = dlg.Button0
+        btn_ctrl.Click()
+    
+
 def run():
     
-    cp_restart()
-    time.sleep(10)
     if isConnect() == True:
         get_logger().debug("cybos plus connected")
+
+        t = autoPw()        
+        t.start()
+        instCpTdUtil.TradeInit(0)
+        acountnum = instCpTdUtil.AccountNumber
+        print("{}".format(acountnum))
     else:
         get_logger().debug("cybos plus not connected")
+        cp_restart()
+        time.sleep(10)
+        
+        t = autoPw()        
+        t.start()
+        instCpTdUtil.TradeInit(0)
+        acountnum = instCpTdUtil.AccountNumber
+        print("{}".format(acountnum))
+        
 
 if __name__ == '__main__':
     run()
