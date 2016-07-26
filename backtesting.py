@@ -232,10 +232,9 @@ def run():
                 get_logger().debug("code : {}. name:{} strategy:{} start".format(code,name,strategys))
                 
                 last_portfolio = 0
+                data = makeBacktestingDataFrame(code)
                 for point in SELL_PRICE_RATIO:
                     sell_point = point
-                    
-                    data = makeBacktestingDataFrame(code)
                     if strategys == 'MAGC':
                         algo = TradingAlgorithm(capital_base=10000000, initialize=initialize_magc, handle_data=handle_data_magc, identifiers=[code]  )
                         results = algo.run(data)
@@ -248,20 +247,20 @@ def run():
                     
                     portfolio = results['portfolio_value'][-1]
                     if last_portfolio < portfolio:
-                        if last_portfolio != 0:
-                            backtesting_save_data['CODE'].clear()
-                            backtesting_save_data['NAME'].clear()
-                            backtesting_save_data['STRATEGY'].clear()
-                            backtesting_save_data['SELL_PRICE_RATIO'].clear()
-                            backtesting_save_data['PORTFOLIO_VALUE'].clear()
-                            backtesting_save_data['OPEN'].clear()
-                            backtesting_save_data['HIGH'].clear()
-                            backtesting_save_data['LOW'].clear()
-                            backtesting_save_data['CLOSE'].clear()
-                            backtesting_save_data['VOLUME'].clear()
-                            backtesting_save_data['PER'].clear()
-                            backtesting_save_data['BPS'].clear()
-                            backtesting_save_data['PBR'].clear()
+                        if last_portfolio != 0 :
+                            backtesting_save_data['CODE'].pop()
+                            backtesting_save_data['NAME'].pop()
+                            backtesting_save_data['STRATEGY'].pop()
+                            backtesting_save_data['SELL_PRICE_RATIO'].pop()
+                            backtesting_save_data['PORTFOLIO_VALUE'].pop()
+                            backtesting_save_data['OPEN'].pop()
+                            backtesting_save_data['HIGH'].pop()
+                            backtesting_save_data['LOW'].pop()
+                            backtesting_save_data['CLOSE'].pop()
+                            backtesting_save_data['VOLUME'].pop()
+                            backtesting_save_data['PER'].pop()
+                            backtesting_save_data['BPS'].pop()
+                            backtesting_save_data['PBR'].pop()
 
                         backtesting_save_data['CODE'].append(code)
                         backtesting_save_data['NAME'].append(name)
@@ -278,10 +277,10 @@ def run():
                         backtesting_save_data['PBR'].append(pbr)
                         last_portfolio = portfolio
 
-                    backtesting_save_df = DataFrame(backtesting_save_data)
+        backtesting_save_df = DataFrame(backtesting_save_data)
                
-                backtesting_save_df.to_sql('BACK', con, if_exists='replace', chunksize=1000)
-                get_logger().debug("code : {}. name:{} strategy:{} end".format(code,name,strategys))
+        backtesting_save_df.to_sql('BACK', con, if_exists='replace', chunksize=1000)
+        get_logger().debug("code : {}. name:{} strategy:{} end".format(code,name,strategys))
 
 if __name__ == '__main__':
     run()
