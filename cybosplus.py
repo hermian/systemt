@@ -27,12 +27,16 @@ def get_password():
     return pw1, pw2, pw3
 
 def cp_restart():
+    os.system("taskkill /im DibServer.exe")
     os.system("taskkill /im CpStart.exe")
     os.system("taskkill /im ncStarter.exe")
+    time.sleep(3)
 
     app = application.Application()
     app.start("C:/DAISHIN/STARTER/ncStarter.exe /prj:cp")
 
+    time.sleep(1)
+    # security warn popup
     dlg = app.top_window_()
     btn_ctrl = dlg.Button0
     btn_ctrl.Click()
@@ -77,6 +81,8 @@ def run():
     
     if isConnect() == True:
         get_logger().debug("cybos plus connected")
+        cp_restart()
+        time.sleep(15)
 
         t = autoPw()        
         t.start()
@@ -86,7 +92,7 @@ def run():
     else:
         get_logger().debug("cybos plus not connected")
         cp_restart()
-        time.sleep(10)
+        time.sleep(15)
         
         t = autoPw()        
         t.start()
