@@ -72,7 +72,7 @@ def run():
 
         code_magc = {'CODE':[],
                      'NAME':[]}
-        code_bband   = {'CODE':[],
+        code_bband= {'CODE':[],
                      'NAME':[]}
         code_macd = {'CODE':[],
                      'NAME':[]}

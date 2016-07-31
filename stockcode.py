@@ -12,11 +12,16 @@ from pandas import Series, DataFrame
 def insert_from_cp(con):
     instCpStockCode = win32com.client.Dispatch("CpUtil.CpStockCode")
     instStockMst = win32com.client.Dispatch("dscbo1.StockMst")
+    instCpCodeMgr = win32com.client.Dispatch("CpUtil.CpCodeMgr")
+
     code_data = {'CODE':[],
                  'NAME':[],
                  'TYPE':[],
                  'PER':[],
-                 'BPS':[]} #PRICE / BPS
+                 'BPS':[], #PRICE / BPS
+                 'INDSTRY_CODE':[],
+                 'INDSTRY':[]}
+
     total = instCpStockCode.GetCount()
     for i in range(0, total):
         code = instCpStockCode.GetData(CPSTOCKCODE_CODE, i)
@@ -29,12 +34,16 @@ def insert_from_cp(con):
         type = instStockMst.GetHeaderValue(CPSTOCKMST_CATEGORY)
         per = instStockMst.GetHeaderValue(CPSTOCKMST_PER)
         bps = instStockMst.GetHeaderValue(CPSTOCKMST_BPS)
+        industry_code = instStockMst.GetHeaderValue(CPSTOCKMST_INDUSTRY_CODE)
+        industry_name = instCpCodeMgr.GetIndustryName(industry_code)
 
         code_data['TYPE'].append(type)
         code_data['PER'].append(per)
         code_data['BPS'].append(bps)
+        code_data['INDSTRY_CODE'].append(industry_code)
+        code_data['INDSTRY'].append(industry_name)
+
         get_logger().debug("{}/{} {} {} {} {} {}".format(i, total,code, name, type, per, bps))
-        
 
     data = DataFrame(code_data)
     data.to_sql("CODE", con, if_exists='replace', chunksize=1000)
