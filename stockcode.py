@@ -52,7 +52,7 @@ def insert_from_cp(con):
 def get_code_list():
     result = dict()
     with sqlite3.connect("code.db") as con:
-        for code, name in con.cursor().execute("SELECT code, name FROM CODE where TYPE = '거래소' or TYPE = '코스닥' "):
+        for code, name in con.cursor().execute('SELECT code, name FROM CODE where (type = "거래소" or type = "코스닥") and name not like "TIGER%" and name not like "KOSEF%" and name not like "KODEX%" and name not like "KINDEX%" and name not like "ARIRANG%" and name not like "KBSTAR%" and name not like "KTOP%" and name not like "TREX%" and name not like "파워%" and name not like "%호" and name not like "%스팩" '):
             result[code] = name
 
     return result.items()

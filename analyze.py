@@ -109,30 +109,6 @@ def run():
             df = makeDataFrame( code )
             if len(df) == 0: continue
 
-            res = isMAGoldCross( df, 20, 60 )
-            if res == True:
-                code_magc['CODE'].append(code)
-                code_magc['NAME'].append(name)
-                get_logger().debug("MA20, MA60 Golden Cross {}{}".format(code,name))
-
-            res = isBBandSignal( df, 20 )
-            if res == True:
-                code_bband['CODE'].append(code)
-                code_bband['NAME'].append(name)
-                get_logger().debug("BBnad lower after up {}{}".format(code,name))
-
-            res = isMACDSignal( df, 12, 26, 9)
-            if res == True:
-                code_macd['CODE'].append(code)
-                code_macd['NAME'].append(name)
-                get_logger().debug("MACD sig {}{}".format(code,name))
-
-            res = isArrange( df, 60, 120 )
-            if res == True:
-                code_arrange['CODE'].append(code)
-                code_arrange['NAME'].append(name)
-                get_logger().debug("ARRANGE {}{}".format(code, name))
-
             # per,bps, pbr table
             per , bps = get_per_bps_with_code(code)
             open, high, low, close, volume = get_last_data_with_code(code)
@@ -156,6 +132,30 @@ def run():
             per_bps_pbr['INDUSTRY_CODE'].append(industry_code)
             per_bps_pbr['INDUSTRY'].append(industry_name)
             get_logger().debug("{} {} {} {} {} {} {} {} {} {}".format(code,name,open,high,low, close,volume,per,bps,pbr))
+
+            arranged = isArrange( df, 60, 120 )
+            if arranged == True and pbr <= 1:
+                code_arrange['CODE'].append(code)
+                code_arrange['NAME'].append(name)
+                get_logger().debug("ARRANGE {}{}".format(code, name))
+            
+            res = isBBandSignal( df, 20 )
+            if res == True and pbr <= 1:
+                code_bband['CODE'].append(code)
+                code_bband['NAME'].append(name)
+                get_logger().debug("BBnad lower after up {}{}".format(code,name))
+
+            res = isMAGoldCross( df, 20, 60 )
+            if res == True and arranged == True and pbr <= 1:
+                code_magc['CODE'].append(code)
+                code_magc['NAME'].append(name)
+                get_logger().debug("MA20, MA60 Golden Cross {}{}".format(code,name))
+
+            res = isMACDSignal( df, 12, 26, 9)
+            if res == True and arranged == True and pbr <= 1:
+                code_macd['CODE'].append(code)
+                code_macd['NAME'].append(name)
+                get_logger().debug("MACD sig {}{}".format(code,name))
 
         magc = DataFrame(code_magc)
         bband   = DataFrame(code_bband)
@@ -188,5 +188,8 @@ select code, name from
 	where pbr < 1 and bps > 0
 	order by pbr ;
 
+
+ARRANGE query
+select B.code, B.name, round(B.pbr,2), b.industry from bps B, arrange A where A.code = B.code  and B.pbr >= 0 and B.name not like "TIGER%" and B.name not like "KOSEF%" and B.name not like "KODEX%" and b.name not like "KINDEX%" and B.name not like "ARIRANG%" and B.name not like "KBSTAR%" and B.name not like "KTOP%" and B.name not like "TREX%" order by B.pbr;
 
 """
