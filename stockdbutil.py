@@ -64,6 +64,15 @@ def get_per_bps_with_code(code):
 
     return per, bps
 
+def get_industry_with_code(code):
+    with sqlite3.connect("code.db") as con:
+        for industry_code, industry_name in con.cursor().execute("SELECT INDUSTRY_CODE, INDUSTRY FROM CODE WHERE CODE = '{}'".format(code)):
+            industry_code = industry_code
+            industry_name = industry_name
+
+    return industry_code, industry_name
+
+
 def get_last_data_with_code(code):
     with sqlite3.connect("price.db") as con:
         for open, high, low, close, volume in con.cursor().execute("SELECT OPEN, HIGH, LOW, CLOSE, VOLUME FROM '{}' WHERE DATE = (SELECT MAX(DATE) FROM '{}')".format(code, code)):

@@ -9,7 +9,7 @@ import numpy as np
 from logger import get_logger
 from stockcode import get_code_list
 
-from stockdbutil import makeDataFrame, get_per_bps_with_code, get_last_data_with_code
+from stockdbutil import makeDataFrame, get_per_bps_with_code, get_last_data_with_code, get_industry_with_code
 
 def isMAGoldCross( df, MA1 = 20, MA2 = 60 ):
     df['short_ma'] = pd.rolling_mean(df['CLOSE'],MA1)
@@ -58,6 +58,18 @@ def isMACDSignal( df, n1 = 12, n2= 26, c= 9):
     else:
         return False
 
+def isArrange( df, MA1 = 60, MA2 = 120 ):
+    df['short_ma'] = pd.rolling_mean(df['CLOSE'],MA1)
+    df['long_ma'] = pd.rolling_mean(df['CLOSE'],MA2)
+    df['signal'] = 0.0
+        
+    if len(df) < MA2 * 4 : return False
+        
+    if df['short_ma'][len(df)-1] > df['long_ma'][len(df)-1] and df['CLOSE'][len(df)-1] > df['short_ma'][len(df)-1]:
+        return True
+    else:
+        return False
+
 def get_code_list_from_analyze( type ):
     result = dict()
     with sqlite3.connect("analyze.db") as con:
@@ -77,6 +89,9 @@ def run():
         code_macd = {'CODE':[],
                      'NAME':[]}
 
+        code_arrange = {'CODE':[],
+                        'NAME':[]}
+
         per_bps_pbr = {'CODE':[],
                        'NAME':[],
                        'OPEN':[],
@@ -86,7 +101,9 @@ def run():
                        'VOLUME':[],
                        'PER':[],
                        'BPS':[],
-                       'PBR':[]}
+                       'PBR':[],
+                       'INDUSTRY_CODE':[],
+                       'INDUSTRY':[]}
 
         for code, name in get_code_list():
             df = makeDataFrame( code )
@@ -110,6 +127,12 @@ def run():
                 code_macd['NAME'].append(name)
                 get_logger().debug("MACD sig {}{}".format(code,name))
 
+            res = isArrange( df, 60, 120 )
+            if res == True:
+                code_arrange['CODE'].append(code)
+                code_arrange['NAME'].append(name)
+                get_logger().debug("ARRANGE {}{}".format(code, name))
+
             # per,bps, pbr table
             per , bps = get_per_bps_with_code(code)
             open, high, low, close, volume = get_last_data_with_code(code)
@@ -117,6 +140,8 @@ def run():
                 pbr = close / bps
             else:
                 pbr = 0.0
+            
+            industry_code, industry_name = get_industry_with_code(code)
 
             per_bps_pbr['CODE'].append(code)
             per_bps_pbr['NAME'].append(name)
@@ -128,17 +153,24 @@ def run():
             per_bps_pbr['PER'].append(per)
             per_bps_pbr['BPS'].append(bps)
             per_bps_pbr['PBR'].append(pbr)
+            per_bps_pbr['INDUSTRY_CODE'].append(industry_code)
+            per_bps_pbr['INDUSTRY'].append(industry_name)
             get_logger().debug("{} {} {} {} {} {} {} {} {} {}".format(code,name,open,high,low, close,volume,per,bps,pbr))
 
         magc = DataFrame(code_magc)
         bband   = DataFrame(code_bband)
         macd = DataFrame(code_macd)
+        
         magc.to_sql("MAGC", con, if_exists='replace', chunksize=1000)
         get_logger().debug("MAGC {} saved.".format(len(magc)))
         bband.to_sql("BBAND", con, if_exists='replace', chunksize=1000)
         get_logger().debug("BBAND {} saved.".format(len(bband)))
         macd.to_sql("MACD", con, if_exists='replace', chunksize=1000)
         get_logger().debug("MACD {} saved.".format(len(macd)))
+
+        arrange = DataFrame(code_arrange)
+        arrange.to_sql("ARRANGE", con, if_exists='replace', chunksize=1000)
+        get_logger().debug("ARRANGE {} saved.".format(len(arrange)))
 
         per_bps_pbr_df = DataFrame(per_bps_pbr)
         per_bps_pbr_df.to_sql("BPS", con, if_exists='replace', chunksize=1000)

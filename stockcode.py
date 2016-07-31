@@ -19,8 +19,8 @@ def insert_from_cp(con):
                  'TYPE':[],
                  'PER':[],
                  'BPS':[], #PRICE / BPS
-                 'INDSTRY_CODE':[],
-                 'INDSTRY':[]}
+                 'INDUSTRY_CODE':[],
+                 'INDUSTRY':[]}
 
     total = instCpStockCode.GetCount()
     for i in range(0, total):
@@ -40,8 +40,8 @@ def insert_from_cp(con):
         code_data['TYPE'].append(type)
         code_data['PER'].append(per)
         code_data['BPS'].append(bps)
-        code_data['INDSTRY_CODE'].append(industry_code)
-        code_data['INDSTRY'].append(industry_name)
+        code_data['INDUSTRY_CODE'].append(industry_code)
+        code_data['INDUSTRY'].append(industry_name)
 
         get_logger().debug("{}/{} {} {} {} {} {}".format(i, total,code, name, type, per, bps))
 
