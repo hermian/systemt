@@ -75,7 +75,26 @@ class autoPw(threading.Thread):
     
         btn_ctrl = dlg.Button0
         btn_ctrl.Click()
-    
+
+def reboot():
+    import os
+    from time import sleep
+
+    print ("GOING DOWN FOR A REBOOT IN 5 SECONDS")
+
+    sleep (1)
+    print ("5")
+    sleep (1)
+    print ("4")
+    sleep (1)
+    print ("3")
+    sleep (1)
+    print ("2")
+    sleep (1)
+    print ("1")
+    sleep (1)
+    print ("REBOOTING")
+    os.system("shutdown -t 0 -r -f")    
 
 def run():
     
