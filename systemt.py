@@ -5,7 +5,6 @@ from RepeatedTimer import RepeatedTimer
 global running
 running = False
 
-
 def batch(msg):
     from time import localtime
     t = localtime()

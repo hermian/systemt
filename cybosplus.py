@@ -94,7 +94,35 @@ def reboot():
     print ("1")
     sleep (1)
     print ("REBOOTING")
-    os.system("shutdown -t 0 -r -f")    
+    os.system("shutdown -t 0 -r -f")
+
+
+# 보유종목 매도기
+# 이미 보유한 종목을 1% 수익으로 매도 주문을 넣는다.
+def mystockseller():
+	pass
+
+# 백테스팅 결과 매수기
+# 백테스팅 결과 종목을 현재가 -1%에 매수 주문을 넣는다.
+# 잔고 / 매수 단위 금액 : 주문 종목 카운트
+# 주문을 넣으면 order.db에 종목 코드를 저장 한다.
+# 스키마 : code, name, price, volume, state(Order, Buyed) 
+# order db에 이미 존재하는 종목은 skip 한다.
+def buyFromBacktesting():
+	pass
+
+# 매수 이벤트가 발생하면 해당 종목을 +2%에 매도 주문을 넣는다.
+# 매수가 체결 되자 마자 + 2%에 매도 주문을 넣는다.
+# order.db를 업데이트 한다.
+def sellByBuyEvent():
+	pass
+
+# 매도 이벤트가 발생하면 잔고 확인후 백테스팅 종목에 다음 순의 종목을 매수 한다.
+# 매도된 종목은 oder.db에서 제거 한다.
+def buyBySellEvent():
+	buyFromBacktesting()
+	pass
+  
 
 def run():
     
@@ -118,7 +146,6 @@ def run():
         instCpTdUtil.TradeInit(0)
         acountnum = instCpTdUtil.AccountNumber
         print("{}".format(acountnum))
-        
 
 if __name__ == '__main__':
     run()

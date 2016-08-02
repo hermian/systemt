@@ -292,6 +292,6 @@ select code, name, close, volume , portfolio_value , pbr, STRATEGY, SELL_PRICE_R
 			( select * from 
 				back order by volume desc)
 			order by pbr)
-	where pbr < 1 and bps > 0 
-	order by portfolio_value desc limit 10;
+	where pbr < 1 and bps > 0 and  portfolio_value > 100000
+	order by portfolio_value desc;
 """
