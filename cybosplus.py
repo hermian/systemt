@@ -9,6 +9,7 @@ from pywinauto import timings
 import time
 import os
 import sqlite3
+from cp_constant import *
 
 instCpTdUtil = win32com.client.Dispatch("CpTrade.CpTdUtil")
 
@@ -100,7 +101,27 @@ def reboot():
 # 보유종목 매도기
 # 이미 보유한 종목을 1% 수익으로 매도 주문을 넣는다.
 def mystockseller():
-	pass
+    instCpTd6033 = win32com.client.Dispatch("CpTrade.CpTd6033")
+    t = autoPw()        
+    t.start()
+    instCpTdUtil.TradeInit(0)
+    acountnum = instCpTdUtil.AccountNumber
+    instCpTd6033.SetInputValue(CPTD6033_PARAMETER_ACCOUNT_NUM, acountnum[0])
+    instCpTd6033.SetInputValue(CPTD6033_PARAMETER_GOOD_CODE, CPTD6033_PARAMETER_GOOD_CODE_STOCK)
+    instCpTd6033.BlockRequest()
+
+    print("계좌명 %s"       % instCpTd6033.GetHeaderValue(CPTD6033_ACCOUNT_NAME))
+    print("결제잔고 수량 %d" % instCpTd6033.GetHeaderValue(CPTD6033_PAYMENT_STOCK_COUNT))
+    print("체결잔고 수량 %d" % instCpTd6033.GetHeaderValue(CPTD6033_CONCLUSION_STOCK_COUNT))
+    print("평가금액 %d" % instCpTd6033.GetHeaderValue(CPTD6033_ASSESSED_VALUE))
+    print("평가손인 %d" % instCpTd6033.GetHeaderValue(CPTD6033_VALUATION))
+    print("수익율 %d" % instCpTd6033.GetHeaderValue(CPTD6033_REVENUE_RATIO))
+    
+    count = instCpTd6033.GetHeaderValue(CPTD6033_RECEIVE_COUNT)
+    for i in range(0, count):
+        print("종목명 %s" % instCpTd6033.GetDataValue(0, i))
+
+
 
 # 백테스팅 결과 매수기
 # 백테스팅 결과 종목을 현재가 -1%에 매수 주문을 넣는다.
@@ -128,14 +149,16 @@ def run():
     
     if isConnect() == True:
         get_logger().debug("cybos plus connected")
-        cp_restart()
-        time.sleep(15)
+        #cp_restart()
+        #time.sleep(15)
 
         t = autoPw()        
         t.start()
         instCpTdUtil.TradeInit(0)
         acountnum = instCpTdUtil.AccountNumber
         print("{}".format(acountnum))
+
+        mystockseller()
     else:
         get_logger().debug("cybos plus not connected")
         cp_restart()
