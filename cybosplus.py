@@ -102,6 +102,8 @@ def reboot():
 # 이미 보유한 종목을 1% 수익으로 매도 주문을 넣는다.
 def mystockseller():
     instCpTd6033 = win32com.client.Dispatch("CpTrade.CpTd6033")
+    instCpTd0311 = win32com.client.Dispatch("CpTrade.CpTd0311")
+    
     t = autoPw()        
     t.start()
     instCpTdUtil.TradeInit(0)
@@ -114,14 +116,43 @@ def mystockseller():
     print("결제잔고 수량 %d" % instCpTd6033.GetHeaderValue(CPTD6033_PAYMENT_STOCK_COUNT))
     print("체결잔고 수량 %d" % instCpTd6033.GetHeaderValue(CPTD6033_CONCLUSION_STOCK_COUNT))
     print("평가금액 %d" % instCpTd6033.GetHeaderValue(CPTD6033_ASSESSED_VALUE))
-    print("평가손인 %d" % instCpTd6033.GetHeaderValue(CPTD6033_VALUATION))
+    print("평가손익 %d" % instCpTd6033.GetHeaderValue(CPTD6033_VALUATION))
     print("수익율 %d" % instCpTd6033.GetHeaderValue(CPTD6033_REVENUE_RATIO))
     
     count = instCpTd6033.GetHeaderValue(CPTD6033_RECEIVE_COUNT)
     for i in range(0, count):
-        print("종목명 %s" % instCpTd6033.GetDataValue(0, i))
+        print("종목명 %s" % instCpTd6033.GetDataValue(CPTD6044_GETDATA_NAME, i))
+        print("종목코드 %s" % instCpTd6033.GetDataValue(CPTD6044_GETDATA_CODE, i))
+        print("체결잔고수량 %s" % instCpTd6033.GetDataValue(CPTD6044_GETDATA_PAYMENT_STOCK_COUNT, i))
+        print("매도가능수량 %s" % instCpTd6033.GetDataValue(CPTD6044_GETDATA_SELL_COUNT, i))
+        print("평가금액 %s" % instCpTd6033.GetDataValue(CPTD6044_GETDATA_ASSESSED_VALUE, i))
+        print("평가손익 %s" % instCpTd6033.GetDataValue(CPTD6044_GETDATA_VALUATION, i))
+        print("손익단가 %s" % instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i))
+        
+        code = instCpTd6033.GetDataValue(CPTD6044_GETDATA_CODE, i)
+        count = instCpTd6033.GetDataValue(CPTD6044_GETDATA_SELL_COUNT, i)
+        price = instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) + int(instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) * 0.01)
+        
+        # 만원 이상 호가 50원
+        if price > 10000 and price % 100 != 0:
+            price = price - (price % 100)
 
+        # 5000원 이상 만원 이하 호가 10원
+        if price > 5000 and price <= 10000 and price % 10 != 0:
+            price = price - (price % 10)        
 
+        # 1000원 이상 5000원 미만 호가 5원
+        if price > 1000 and price <= 5000 and price % 10 != 0:
+            price = price - (price % 10) + 5        
+        
+        if count > 0 :
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_ORDER, CPTD0311_PARAM_ORDER_SELL)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_ACCOUNT_NUM, acountnum[0])
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_GOOD_CODE, CPTD0311_PARAM_GOOD_STOCK)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_STOCK_CODE, code)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_STOCK_COUNT, count)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_STOCK_PRICE, price)
+            instCpTd0311.BlockRequest()
 
 # 백테스팅 결과 매수기
 # 백테스팅 결과 종목을 현재가 -1%에 매수 주문을 넣는다.
