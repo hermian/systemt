@@ -84,3 +84,17 @@ def get_last_data_with_code(code):
 
     return open, high, low, close, volume
 
+def get_code_list_from_bakctesting():
+    result = dict()
+    with sqlite3.connect("backtesting.db") as con:
+        for code, close in con.cursor().execute("select code, close from ( select * from ( select * from back order by volume desc) order by pbr) where pbr < 1 and bps > 0 and  portfolio_value > 100000 and close < 100000 and close > 1000 order by portfolio_value desc "):
+            result[code] = close 
+        
+    return result.items()
+
+def code_to_name(code):
+    with sqlite3.connect("code.db") as con:
+        for name in con.cursor().execute("SELECT NAME FROM CODE WHERE CODE = '{}'".format(code)):
+            name = name
+
+    return name

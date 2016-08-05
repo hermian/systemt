@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 from time import sleep
 from RepeatedTimer import RepeatedTimer
+from cybosplus import *
 
 global running
 running = False
@@ -23,8 +24,8 @@ def batch(msg):
     # 08 cybos plus connect
     if t.tm_hour == 8 and t.tm_min == 0:
         running = True
-        import cybosplus
-        cybosplus.run()
+        
+        connect()
         running = False
 
     # 16 dataclawler
@@ -43,7 +44,7 @@ def batch(msg):
 # batch process
 if __name__ == '__main__':
     print ("starting...")
-    rt = RepeatedTimer(1, batch, "batch") # it auto-starts, no need of rt.start()
+    rt = RepeatedTimer(10, batch, "batch") # it auto-starts, no need of rt.start()
     try:
         sleep(60*60*24) # your long-running job goes here...
     finally:

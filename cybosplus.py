@@ -1,7 +1,5 @@
 #-*- coding: utf-8 -*-
 
-import win32com.client
-
 from logger import get_logger
 import win32com.client
 from pywinauto import application
@@ -10,11 +8,17 @@ import time
 import os
 import sqlite3
 from cp_constant import *
+from settings import *
+from stockdbutil import get_code_list_from_bakctesting, code_to_name
 
 instCpTdUtil = win32com.client.Dispatch("CpTrade.CpTdUtil")
+instCpTd6033 = win32com.client.Dispatch("CpTrade.CpTd6033") #계좌별 보유 종목
+instCpTd0311 = win32com.client.Dispatch("CpTrade.CpTd0311") #매수 매도 처리
+instStockMst = win32com.client.Dispatch("dscbo1.StockMst") # 현재가 얻기
+instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
 
 def isConnect():
-    instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
+    global instCpCybos    
     if instCpCybos.Isconnect == 1:
         return True
     else:
@@ -101,8 +105,8 @@ def reboot():
 # 보유종목 매도기
 # 이미 보유한 종목을 1% 수익으로 매도 주문을 넣는다.
 def mystockseller():
-    instCpTd6033 = win32com.client.Dispatch("CpTrade.CpTd6033")
-    instCpTd0311 = win32com.client.Dispatch("CpTrade.CpTd0311")
+    global instCpTd6033
+    global instCpTd0311
     
     t = autoPw()        
     t.start()
@@ -161,7 +165,78 @@ def mystockseller():
 # 스키마 : code, name, price, volume, state(Order, Buyed) 
 # order db에 이미 존재하는 종목은 skip 한다.
 def buyFromBacktesting():
-	pass
+    global instCpTd6033
+    global instStockMst
+    global instCpTd0311
+
+    totalMoney = MAX_BUY_MONEY
+    
+    t = autoPw()        
+    t.start()
+    instCpTdUtil.TradeInit(0)
+    acountnum = instCpTdUtil.AccountNumber
+    instCpTd6033.SetInputValue(CPTD6033_PARAMETER_ACCOUNT_NUM, acountnum[0])
+    instCpTd6033.SetInputValue(CPTD6033_PARAMETER_GOOD_CODE, CPTD6033_PARAMETER_GOOD_CODE_STOCK)
+    instCpTd6033.BlockRequest()
+
+    print("계좌명 %s"       % instCpTd6033.GetHeaderValue(CPTD6033_ACCOUNT_NAME))
+    print("결제잔고 수량 %d" % instCpTd6033.GetHeaderValue(CPTD6033_PAYMENT_STOCK_COUNT))
+    print("체결잔고 수량 %d" % instCpTd6033.GetHeaderValue(CPTD6033_CONCLUSION_STOCK_COUNT))
+    print("평가금액 %d" % instCpTd6033.GetHeaderValue(CPTD6033_ASSESSED_VALUE))
+    print("평가손익 %d" % instCpTd6033.GetHeaderValue(CPTD6033_VALUATION))
+    print("수익율 %d" % instCpTd6033.GetHeaderValue(CPTD6033_REVENUE_RATIO))
+    
+    count = instCpTd6033.GetHeaderValue(CPTD6033_RECEIVE_COUNT)
+    for i in range(0, count):
+        count = instCpTd6033.GetDataValue(CPTD6044_GETDATA_SELL_COUNT, i)
+        price = instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) 
+        totalMoney = totalMoney - count * price
+
+    print ("잔액: %d" % totalMoney)
+
+    for code, close in get_code_list_from_bakctesting():
+        print(" {} {}".format(code, close))
+        
+        #현재가 얻기
+        instStockMst.SetInputValue(0, code)
+        instStockMst.BlockRequest()
+        cur_price = instStockMst.GetHeaderValue(CPSTOCKMST_CUR_PRICE)
+        
+        price = close - (close * 0.01)
+
+        if cur_price < price:
+            price = cur_price
+
+        count = int(BUY_MONEY_UNIT / price)
+
+        # 만원 이상 호가 50원
+        if price > 10000 and price % 100 != 0:
+            price = price - (price % 100)
+
+        # 5000원 이상 만원 이하 호가 10원
+        if price > 5000 and price <= 10000 and price % 10 != 0:
+            price = price - (price % 10)        
+
+        # 1000원 이상 5000원 미만 호가 5원
+        if price > 1000 and price <= 5000 and price % 10 != 0:
+            price = price - (price % 10) + 5        
+        
+        print("현재가: {}, 매수호가: {}".format( cur_price, price ))
+        if count > 0 :
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_ORDER, CPTD0311_PARAM_ORDER_BUY)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_ACCOUNT_NUM, acountnum[0])
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_GOOD_CODE, CPTD0311_PARAM_GOOD_STOCK)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_STOCK_CODE, code)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_STOCK_COUNT, count)
+            instCpTd0311.SetInputValue(CPTD0311_INPUT_STOCK_PRICE, price)
+            instCpTd0311.BlockRequest()
+
+            print(" {} {}주 {}단가 매수 주문".format(code_to_name(code), count, price))
+
+        totalMoney = totalMoney - count * price
+        if totalMoney < BUY_MONEY_UNIT:
+            break
+
 
 # 매수 이벤트가 발생하면 해당 종목을 +2%에 매도 주문을 넣는다.
 # 매수가 체결 되자 마자 + 2%에 매도 주문을 넣는다.
@@ -174,7 +249,18 @@ def sellByBuyEvent():
 def buyBySellEvent():
 	buyFromBacktesting()
 	pass
-  
+
+
+def connect():
+    get_logger().debug("cybos plus not connected")
+    cp_restart()
+    time.sleep(15)
+        
+    t = autoPw()        
+    t.start()
+    instCpTdUtil.TradeInit(0)
+    acountnum = instCpTdUtil.AccountNumber
+    print("{}".format(acountnum))
 
 def run():
     
@@ -190,6 +276,7 @@ def run():
         print("{}".format(acountnum))
 
         mystockseller()
+        #buyFromBacktesting()
     else:
         get_logger().debug("cybos plus not connected")
         cp_restart()
