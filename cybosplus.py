@@ -12,7 +12,7 @@ from settings import *
 from stockdbutil import get_code_list_from_bakctesting, code_to_name
 
 import sys
-from PyQt5.QtWidgets import *
+from PyQt4.QtGui import *
 
 instCpTdUtil = win32com.client.Dispatch("CpTrade.CpTdUtil")
 instCpTd6033 = win32com.client.Dispatch("CpTrade.CpTd6033") #계좌별 보유 종목
@@ -277,7 +277,7 @@ def run():
         buyFromBacktesting()
 
         app = QApplication(sys.argv)
-        inst = win32com.client.Dispatch("cpdib.CpConclusion)
+        inst = win32com.client.Dispatch("cpdib.CpConclusion")
         win32com.client.WithEvents(inst, CpEvent)
         
         CpEvent.instance = inst
