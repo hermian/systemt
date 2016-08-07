@@ -11,11 +11,17 @@ from cp_constant import *
 from settings import *
 from stockdbutil import get_code_list_from_bakctesting, code_to_name
 
+import sys
+from PyQt5.QtWidgets import *
+
 instCpTdUtil = win32com.client.Dispatch("CpTrade.CpTdUtil")
 instCpTd6033 = win32com.client.Dispatch("CpTrade.CpTd6033") #계좌별 보유 종목
 instCpTd0311 = win32com.client.Dispatch("CpTrade.CpTd0311") #매수 매도 처리
 instStockMst = win32com.client.Dispatch("dscbo1.StockMst") # 현재가 얻기
 instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
+
+global totalMoney
+totalMoney = MAX_BUY_MONEY 
 
 def isConnect():
     global instCpCybos    
@@ -70,7 +76,7 @@ class autoPw(threading.Thread):
     def run(self):
         app = application.Application()
         title = "CybosPlus 주문확인 설정"
-        dlg = timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title=title))
+        dlg = timings.WaitUntilPasses(5, 0.5, lambda: app.window_(title=title))
     
         pw1, pw2, pw3 = get_password()
     
@@ -104,7 +110,7 @@ def reboot():
 
 # 보유종목 매도기
 # 이미 보유한 종목을 1% 수익으로 매도 주문을 넣는다.
-def mystockseller():
+def mystockseller(msg):
     global instCpTd6033
     global instCpTd0311
     
@@ -169,7 +175,9 @@ def buyFromBacktesting():
     global instStockMst
     global instCpTd0311
 
-    totalMoney = MAX_BUY_MONEY
+    global totalMoney
+    if totalMoney < BUY_MONEY_UNIT:
+        return
     
     t = autoPw()        
     t.start()
@@ -263,31 +271,32 @@ def connect():
     print("{}".format(acountnum))
 
 def run():
-    
-    if isConnect() == True:
-        get_logger().debug("cybos plus connected")
-        #cp_restart()
-        #time.sleep(15)
-
-        t = autoPw()        
-        t.start()
-        instCpTdUtil.TradeInit(0)
-        acountnum = instCpTdUtil.AccountNumber
-        print("{}".format(acountnum))
-
-        mystockseller()
-        #buyFromBacktesting()
-    else:
-        get_logger().debug("cybos plus not connected")
-        cp_restart()
-        time.sleep(15)
         
-        t = autoPw()        
-        t.start()
-        instCpTdUtil.TradeInit(0)
-        acountnum = instCpTdUtil.AccountNumber
-        print("{}".format(acountnum))
+    if isConnect() == True:
+        mystockseller("sss")
+        buyFromBacktesting()
+
+        app = QApplication(sys.argv)
+        inst = win32com.client.Dispatch("cpdib.CpConclusion)
+        win32com.client.WithEvents(inst, CpEvent)
+        
+        CpEvent.instance = inst
+        inst.Subscribe()
+        app.exec_()
+    else:
+        connect()
+
 
 if __name__ == '__main__':
     run()
+
+
+class CpEvent:
+    instance = None
+    def OnReceived(self):
+        name = CpEvent.instance.GetHeaderValue(2)
+        count = CpEvent.instance.GetHeaderValue(3)
+        price = CpEvent.instance.GetHeaderValue(4)
+        print("{} {}주 단가{}원 체결되었습니다.".format(name, count, price))
+        mystockseller("sss")
 
