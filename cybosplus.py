@@ -270,6 +270,16 @@ def connect():
     acountnum = instCpTdUtil.AccountNumber
     print("{}".format(acountnum))
 
+class CpEvent:
+    instance = None
+    def OnReceived(self):
+        name = CpEvent.instance.GetHeaderValue(2)
+        count = CpEvent.instance.GetHeaderValue(3)
+        price = CpEvent.instance.GetHeaderValue(4)
+        print("{} {}주 단가{}원 체결되었습니다.".format(name, count, price))
+        mystockseller("sss")
+        buyFromBacktesting()
+
 def run():
         
     if isConnect() == True:
@@ -277,7 +287,7 @@ def run():
         buyFromBacktesting()
 
         app = QApplication(sys.argv)
-        inst = win32com.client.Dispatch("cpdib.CpConclusion")
+        inst = win32com.client.Dispatch("dscbo1.CpConclusion")
         win32com.client.WithEvents(inst, CpEvent)
         
         CpEvent.instance = inst
@@ -291,12 +301,5 @@ if __name__ == '__main__':
     run()
 
 
-class CpEvent:
-    instance = None
-    def OnReceived(self):
-        name = CpEvent.instance.GetHeaderValue(2)
-        count = CpEvent.instance.GetHeaderValue(3)
-        price = CpEvent.instance.GetHeaderValue(4)
-        print("{} {}주 단가{}원 체결되었습니다.".format(name, count, price))
-        mystockseller("sss")
+
 
