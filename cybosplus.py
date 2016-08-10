@@ -23,6 +23,10 @@ instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
 global totalMoney
 totalMoney = MAX_BUY_MONEY 
 
+global app
+app = application.Application()
+
+
 def isConnect():
     global instCpCybos    
     if instCpCybos.Isconnect == 1:
@@ -74,9 +78,10 @@ def cp_restart():
 import threading
 class autoPw(threading.Thread):
     def run(self):
-        app = application.Application()
+        global app
+        #app = application.Application()
         title = "CybosPlus 주문확인 설정"
-        dlg = timings.WaitUntilPasses(5, 0.5, lambda: app.window_(title=title))
+        dlg = timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title=title))
     
         pw1, pw2, pw3 = get_password()
     
@@ -113,6 +118,7 @@ def reboot():
 def mystockseller(msg):
     global instCpTd6033
     global instCpTd0311
+    global instStockMst
     
     t = autoPw()        
     t.start()
@@ -141,8 +147,16 @@ def mystockseller(msg):
         
         code = instCpTd6033.GetDataValue(CPTD6044_GETDATA_CODE, i)
         count = instCpTd6033.GetDataValue(CPTD6044_GETDATA_SELL_COUNT, i)
-        price = instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) + int(instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) * 0.01)
+        price = instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) + int(instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) * SELL_RATIO)
         
+        # 현재가 구하기
+        instStockMst.SetInputValue(0, code)
+        instStockMst.BlockRequest()
+        cur_price = instStockMst.GetHeaderValue(CPSTOCKMST_CUR_PRICE)
+        
+        if cur_price > price:
+            price = cur_price
+
         # 만원 이상 호가 50원
         if price > 10000 and price % 100 != 0:
             price = price - (price % 100)
@@ -210,10 +224,13 @@ def buyFromBacktesting():
         instStockMst.BlockRequest()
         cur_price = instStockMst.GetHeaderValue(CPSTOCKMST_CUR_PRICE)
         
-        price = close - (close * 0.01)
+        price = close - (close * BUY_RATIO)
 
         if cur_price < price:
             price = cur_price
+        
+        if price == 0:
+            continue
 
         count = int(BUY_MONEY_UNIT / price)
 
@@ -283,6 +300,7 @@ class CpEvent:
 def run():
         
     if isConnect() == True:
+        #global app
         mystockseller("sss")
         buyFromBacktesting()
 
@@ -293,6 +311,7 @@ def run():
         CpEvent.instance = inst
         inst.Subscribe()
         app.exec_()
+        #app.exec()
     else:
         connect()
 
