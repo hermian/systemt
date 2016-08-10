@@ -11,7 +11,7 @@ from cp_constant import *
 from settings import *
 from stockdbutil import get_code_list_from_bakctesting, code_to_name
 
-import sys
+import sys, getopt
 from PyQt4.QtGui import *
 
 instCpTdUtil = win32com.client.Dispatch("CpTrade.CpTdUtil")
@@ -297,28 +297,32 @@ class CpEvent:
         mystockseller("sss")
         buyFromBacktesting()
 
-def run():
-        
-    if isConnect() == True:
-        #global app
-        mystockseller("sss")
-        buyFromBacktesting()
+def trade():
+    #global app
+    mystockseller("sss")
+    buyFromBacktesting()
 
-        app = QApplication(sys.argv)
-        inst = win32com.client.Dispatch("dscbo1.CpConclusion")
-        win32com.client.WithEvents(inst, CpEvent)
+    app = QApplication(sys.argv)
+    inst = win32com.client.Dispatch("dscbo1.CpConclusion")
+    win32com.client.WithEvents(inst, CpEvent)
         
-        CpEvent.instance = inst
-        inst.Subscribe()
-        app.exec_()
-        #app.exec()
-    else:
+    CpEvent.instance = inst
+    inst.Subscribe()
+    app.exec_()
+    #app.exec()
+
+def main(argv):
+    if argv[0] == "reboot":
+        reboot()
+    elif argv[0] == "connect":
         connect()
-
+    elif argv[0] == "trade":
+        trade()
+    else:
+        print(" option: reboot, connect, trade ")
 
 if __name__ == '__main__':
-    run()
-
+    main(sys.argv[1:])
 
 
 

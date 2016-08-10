@@ -43,11 +43,19 @@ def batch(msg):
 
 # batch process
 if __name__ == '__main__':
+    """
     print ("starting...")
     rt = RepeatedTimer(10, batch, "batch") # it auto-starts, no need of rt.start()
     try:
         sleep(60*60*24) # your long-running job goes here...
     finally:
         rt.stop() # better in a try/finally block to make sure the program ends!
+    """
 
+    import datacrawler
+    datacrawler.run()
+    import analyze
+    analyze.run()
+    import backtesting
+    backtesting.run()
    
