@@ -120,9 +120,9 @@ def mystockseller(msg):
     global instCpTd0311
     global instStockMst
     
-    t = autoPw()        
-    t.start()
-    instCpTdUtil.TradeInit(0)
+    #t = autoPw()        
+    #t.start()
+    #instCpTdUtil.TradeInit(0)
     acountnum = instCpTdUtil.AccountNumber
     instCpTd6033.SetInputValue(CPTD6033_PARAMETER_ACCOUNT_NUM, acountnum[0])
     instCpTd6033.SetInputValue(CPTD6033_PARAMETER_GOOD_CODE, CPTD6033_PARAMETER_GOOD_CODE_STOCK)
@@ -193,9 +193,9 @@ def buyFromBacktesting():
     if totalMoney < BUY_MONEY_UNIT:
         return
     
-    t = autoPw()        
-    t.start()
-    instCpTdUtil.TradeInit(0)
+    #t = autoPw()        
+    #t.start()
+    #instCpTdUtil.TradeInit(0)
     acountnum = instCpTdUtil.AccountNumber
     instCpTd6033.SetInputValue(CPTD6033_PARAMETER_ACCOUNT_NUM, acountnum[0])
     instCpTd6033.SetInputValue(CPTD6033_PARAMETER_GOOD_CODE, CPTD6033_PARAMETER_GOOD_CODE_STOCK)
@@ -224,11 +224,13 @@ def buyFromBacktesting():
         instStockMst.BlockRequest()
         cur_price = instStockMst.GetHeaderValue(CPSTOCKMST_CUR_PRICE)
         
-        price = close - (close * BUY_RATIO)
-
-        if cur_price < price:
-            price = cur_price
+        #price = close - (close * BUY_RATIO)
         
+        #if cur_price < price:
+        #    price = cur_price
+        
+        price = cur_price        
+
         if price == 0:
             continue
 
@@ -299,6 +301,12 @@ class CpEvent:
 
 def trade():
     #global app
+
+    # init only one
+    t = autoPw()        
+    t.start()
+    instCpTdUtil.TradeInit(0)
+
     mystockseller("sss")
     buyFromBacktesting()
 
