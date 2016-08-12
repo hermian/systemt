@@ -2,6 +2,7 @@
 from time import sleep
 from RepeatedTimer import RepeatedTimer
 from cybosplus import *
+from datetime import datetime
 
 global running
 running = False
@@ -51,11 +52,13 @@ if __name__ == '__main__':
     finally:
         rt.stop() # better in a try/finally block to make sure the program ends!
     """
-
-    import datacrawler
-    datacrawler.run()
-    import analyze
-    analyze.run()
-    import backtesting
-    backtesting.run()
+    if datetime.now().date().weekday() == 5 or datetime.now().date().weekday() == 6:
+        exit() 
+    else:    
+        import datacrawler
+        datacrawler.run()
+        import analyze
+        analyze.run()
+        import backtesting
+        backtesting.run()
    

@@ -312,14 +312,18 @@ def trade():
     #app.exec()
 
 def main(argv):
-    if argv[0] == "reboot":
-        reboot()
-    elif argv[0] == "connect":
-        connect()
-    elif argv[0] == "trade":
-        trade()
-    else:
-        print(" option: reboot, connect, trade ")
+
+    if datetime.now().date().weekday() == 5 or datetime.now().date().weekday() == 6:
+        exit() 
+    else: 
+        if argv[0] == "reboot":
+            reboot()
+        elif argv[0] == "connect":
+            connect()
+        elif argv[0] == "trade":
+            trade()
+        else:
+            print(" option: reboot, connect, trade ")
 
 if __name__ == '__main__':
     main(sys.argv[1:])
