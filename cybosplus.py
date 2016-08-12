@@ -80,9 +80,9 @@ class autoPw(threading.Thread):
     def run(self):
         global app
         #app = application.Application()
-        #title = "CybosPlus 주문확인 설정"
-        #dlg = timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title=title))
-    	dlg = app.top_window_()
+        title = "CybosPlus 주문확인 설정"
+        dlg = timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title=title))
+    	#dlg = app.top_window_()
         pw1, pw2, pw3 = get_password()
     
         pass_ctrl = dlg.Edit1
@@ -279,15 +279,7 @@ def buyBySellEvent():
 
 
 def connect():
-    get_logger().debug("cybos plus not connected")
     cp_restart()
-    time.sleep(15)
-        
-    t = autoPw()        
-    t.start()
-    instCpTdUtil.TradeInit(0)
-    acountnum = instCpTdUtil.AccountNumber
-    print("{}".format(acountnum))
 
 class CpEvent:
     instance = None
