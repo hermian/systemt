@@ -10,7 +10,7 @@ import sqlite3
 from cp_constant import *
 from settings import *
 from stockdbutil import get_code_list_from_bakctesting, code_to_name
-
+from datetime import datetime
 import sys, getopt
 from PyQt4.QtGui import *
 
