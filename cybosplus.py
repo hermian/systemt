@@ -20,8 +20,6 @@ instCpTd0311 = win32com.client.Dispatch("CpTrade.CpTd0311") #매수 매도 처�
 instStockMst = win32com.client.Dispatch("dscbo1.StockMst") # 현재가 얻기
 instCpCybos = win32com.client.Dispatch("CpUtil.CpCybos")
 
-global totalMoney
-totalMoney = MAX_BUY_MONEY 
 
 global app
 app = application.Application()
@@ -189,13 +187,6 @@ def buyFromBacktesting():
     global instStockMst
     global instCpTd0311
 
-    global totalMoney
-    if totalMoney < BUY_MONEY_UNIT:
-        return
-    
-    #t = autoPw()        
-    #t.start()
-    #instCpTdUtil.TradeInit(0)
     acountnum = instCpTdUtil.AccountNumber
     instCpTd6033.SetInputValue(CPTD6033_PARAMETER_ACCOUNT_NUM, acountnum[0])
     instCpTd6033.SetInputValue(CPTD6033_PARAMETER_GOOD_CODE, CPTD6033_PARAMETER_GOOD_CODE_STOCK)
@@ -212,9 +203,6 @@ def buyFromBacktesting():
     for i in range(0, count):
         count = instCpTd6033.GetDataValue(CPTD6044_GETDATA_SELL_COUNT, i)
         price = instCpTd6033.GetDataValue(CPTD6044_GETDATA_PRICE, i) 
-        totalMoney = totalMoney - count * price
-
-    print ("잔액: %d" % totalMoney)
 
     for code, close in get_code_list_from_bakctesting():
         print(" {} {}".format(code, close))
@@ -260,11 +248,6 @@ def buyFromBacktesting():
 
             print(" {} {}주 {}단가 매수 주문".format(code_to_name(code), count, price))
 
-        totalMoney = totalMoney - count * price
-        if totalMoney < BUY_MONEY_UNIT:
-            break
-
-
 # 매수 이벤트가 발생하면 해당 종목을 +2%에 매도 주문을 넣는다.
 # 매수가 체결 되자 마자 + 2%에 매도 주문을 넣는다.
 # order.db를 업데이트 한다.
@@ -276,7 +259,6 @@ def sellByBuyEvent():
 def buyBySellEvent():
 	buyFromBacktesting()
 	pass
-
 
 def connect():
     cp_restart()
@@ -309,7 +291,6 @@ def trade():
     CpEvent.instance = inst
     inst.Subscribe()
     app.exec_()
-    #app.exec()
 
 def main(argv):
 
